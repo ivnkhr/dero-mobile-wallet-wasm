@@ -1,0 +1,16 @@
+{
+  "name": "dero",
+  "integrations": {
+    "cordova": {}
+  },
+  "type": "ionic-angular",
+  "gulpStartupTasks": [
+    "watch",
+    "sass"
+  ],
+  "watchPatterns": [
+    "www/**/*",
+    "!www/lib/**/*"
+  ],
+  "id": "adc8cff0"
+}

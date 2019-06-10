@@ -1,0 +1,963 @@
+<!doctype html>
+<html>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <script src="cordova.js"></script>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="./deps/bootstrap.min.css">
+    <link rel="stylesheet" href="./deps/mobile.app.css">
+    <title></title>
+    <script src="./error_reporter.js"></script>
+    <!--<script src="./wasm_exec.js"></script>-->
+    <link href="./deps/tabulator.min.css" rel="stylesheet">
+</head>
+
+<body>
+    
+    <div class="pos-f-t">
+      <nav class="footer-box bg-dark wallet-online">
+        <div class="container">
+          <div class="row">
+            <div class="col">
+              <button class="btn btn-sm btn-block btn-logout" data-i18n="control_wallet_logout" onClick="logout();">...</button>
+            </div>
+            <div class="col">
+              <button id="button_online_offline" class="btn btn-sm btn-block btn-warning" onclick="toggle_online_offline();">...</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+                  <span id="blockchain_height_stats" class="text-danger">
+                    <span class="wallet_topo_height"></span> / <b><span class="daemon_topo_height"></span></b>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </div>
+
+
+    <div class="pos-f-t header-box">
+      <nav class="navbar navbar-dark bg-dark wallet-online">
+        <img src="./logo.png" alt="Logo" height="30">
+        
+        <strong class="header-balance"><span class="total_balance"></span> DERO</strong>
+        
+        <button href="#" class="btn btn-sm btn-set" onclick="var x=function(){$('#ModalSettings').modal('show');};verify_password_action(x);">
+          <span>&#x2699;</span>
+          <span class="d-none d-sm-inline" data-i18n="control_wallet_settings">...</span>
+        </button>
+      </nav>
+      <nav class="navbar navbar-dark bg-dark wallet-closed">
+        <img src="./logo.png" alt="Logo" height="30">
+        <select class="form-control mt-0" id="language_picker">
+          <option class="lang" data-lang="en">...</option>
+        </select>
+      </nav>
+      <ul class="nav nav-pills bg-dark nav-fill m-0 p-2 wallet-closed">
+        <li class="nav-item">
+          <a class="nav-link active" data-toggle="tab" href="#recoverWallet" data-i18n="recover_wallet">...</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-toggle="tab" href="#createWallet" data-i18n="front_create_new_wallet">...</a>
+        </li>
+      </ul>
+      <ul class="nav nav-pills bg-dark nav-fill m-0 p-2 wallet-online">
+        <li class="nav-item">
+          <a class="nav-link active" data-toggle="tab" data-i18n="tab_send" href="#send">...</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-toggle="tab" data-i18n="tab_receive" href="#receive">...</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-toggle="tab" data-i18n="tab_history" href="#history">...</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-toggle="tab" data-i18n="tab_about" href="#about">...</a>
+        </li>
+      </ul>
+    </div>
+    
+    <!--
+    <div class="col d-flex align-items-center justify-content-center pl-0 pr-5" id="header">
+        <div class="row ml-0">
+            <div class="col-lg-8 col-md-8 col-sm-12">
+                <div class="row">
+                    <div class="col-lg-10 col-md-8 col-12">
+                        <div class="row wallet-online">
+                            <div class="col-lg-2 wallet_local_name d-flex justify-content-center">
+                                ...
+                            </div>
+                            <div class="col-lg-7 align-self-center">
+                                <p id="header_address" class="no-m o-h wallet_address clipboard" data-clipboard-action="copy" data-clipboard-target="#header_address">
+                                    ...
+                                </p>
+                            </div>
+                            <div class="col-lg-2 d-flex justify-content-center">
+                                <button class="btn btn-b-2 btn-sm btn-copy" data-clipboard-action="copy" data-clipboard-target="#wallet_address_id">
+                              Copy
+                              </button>
+                                <p class="no-m">
+                                    
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center p-0 m-0" id="myBlockTheme">
+                        <div id="blackTheme"></div>
+                        <div id="whiteTheme"></div>
+                    </div>
+                    <div class="col-lg-1 col-md-3 col-12 text-center">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        -->
+    </div>
+    <!-- show menu to create/open wallet -->
+    <div class="container" id="content">
+      <!--
+        <div class="col-lg-2 col-md-4 col-sm-12 aside pt-5">
+
+            <div class="wallet-online">
+                <div class="justify-content-center d-flex flex-column col-12">
+                    <ul class="dash">
+                        <li>
+                            <button href="#" class="btn btn-sm btn-set float-right" onclick="
+                      var x = function() { $('#ModalSettings').modal('show');};verify_password_action( x);"><span>&#x2699;&nbsp;</span><span data-i18n="control_wallet_settings"> Settings</span>
+                   </button>
+                        </li>
+                        <li>
+                            <br>
+                            <br>
+                        </li>
+                        <li class="text-white"><span data-i18n="balance_total"> Total </span> :</li>
+                        <li class="text-white">
+                            <strong><span class="total_balance"></span></strong>
+                        </li>
+                        <li class="text-s-gray"><span data-i18n="balance_locked">Locked</span> :</li>
+                        <li class="text-muted"><span class="locked_balance"></span></li>
+                        <li class="text-s-gray"><span data-i18n="balance_unlocked">Unlocked</span> :</li>
+                        <li class="text-muted"><span class="unlocked_balance"></span></li>
+                        <li class="text-s-gray"><span data-i18n="daemon_address">Daemon Address</span> :</li>
+                        <li class="text-muted"><span class="wallet_daemon_address"></span></li>
+                        <li class="text-s-gray"><span data-i18n="blockchain_height">Blockchain Height</span> :</li>
+                        <li class="text-muted">
+                            <span id="blockchain_height_stats" class="text-danger">
+                   <span class="wallet_topo_height"></span>/<span class="daemon_topo_height"></span>
+                            </span>
+                        </li>
+                    </ul>
+                    <br>
+                    <ul class="nav flex-column">
+                        <li class="active"><a data-toggle="tab" data-i18n="tab_send" href="#send" class="btn btn-b-2 btn-block btn-radius active">SEND</a></li>
+                        <li><a data-toggle="tab" data-i18n="tab_receive" href="#receive" class="btn btn-b-2 btn-block btn-radius">RECEIVE</a></li>
+                        <li><a data-toggle="tab" data-i18n="tab_history" href="#history" class="btn btn-b-2 btn-block btn-radius">TX HISTORY</a></li>
+                        <li><a data-toggle="tab" data-i18n="tab_about" href="#about" class="btn btn-b-2 btn-block btn-radius">ABOUT</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+      -->
+        <div class="">
+            <div class="row wallet-closed">
+                <div class="col">
+                    <div class="row">
+                        <div class="col-sm-12 text-center">
+                            <div class="tab-content">
+                                <!-- Recover Wallet Tabs-->
+                                <div id="recoverWallet" class="tab-pane fade in active show">
+
+                                    <div class="row justify-content-center">
+                                        <div class="col">
+                                          <div class="wallets-loading">Loading wallet list...</div>
+                                            <div id="local_wallet_list_present">
+                                                <h2 class="text-white mb-3" data-i18n="front_available_wallet"></h2>
+                                                <select class="form-control mb-3" id="local_wallet_list_select"></select>
+                                                <button class="btn btn-b-3 btn-block btn-radius btn-success" data-i18n="front_open_saved_wallet" id="open_saved_wallet_button" onClick="open_saved_wallet();">Open Selected wallet</button>
+                                                <button class="btn btn-b-3 btn-block btn-radius btn-danger" data-i18n="front_delete_saved_wallet" onClick="delete_saved_wallet();">Delete Selected Wallet</button>
+                                                <hr>
+                                            </div>
+                                            <button class="btn btn-b-3 btn-block btn-radius" data-i18n="front_recover_seed_wallet" data-toggle="modal" data-target="#ModalRecoverSeedWords">
+                                   Using <strong>SEED</strong> word (25 words)
+                                   </button>
+                                            <button href="#" class="btn btn-b-3 btn-block btn-radius" data-i18n="front_recover_key_wallet" data-toggle="modal" data-target="#ModalRecoverKey">
+                                   Using Recovery <strong>key</strong> (64 hex char)
+                                   </button>
+                                            <button id="btn_wallet_disk_file" href="#" class="btn btn-b-3 btn-block btn-radius" data-i18n="front_upload_wallet">
+                                   Upload wallet <strong>from Disk</strong>
+                                   </button>
+                                            <div class="form-group my-3" style="display: none;">
+                                                <input type="file" id="wallet_disk_file" name="selected_files[]" />
+                                            </div>
+                                            <br>
+                                            <button href="#" class="btn btn-b-2 btn-block btn-radius" data-i18n="front_recover_view_wallet" data-toggle="modal" data-target="#ModalRecoverViewKey">
+                                   View only
+                                   </button>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-3 col-lg-4"></div>
+                                        <div class="col-sm-12 col-md-6 col-lg-4">
+                                        </div>
+                                        <div class="col-md-3 col-lg-4"></div>
+                                    </div>
+                                </div>
+                                <!-- Create Wallet -->
+                                <div id="createWallet" class="tab-pane fade">
+                                    <h2 class="text-white">
+                                        <div data-i18n="create_new_title">
+                                            Create new wallet
+                                        </div>
+                                    </h2>
+                                    <div class="row justify-content-center">
+                                        <div class="col">
+                                            <div class="form-group">
+                                                <label for="i_new_wallet_name" data-i18n="wallet_name">...</label>
+                                                <input type="text" class="form-control form-b" id="i_new_wallet_name" data-i18n="[placeholder]wallet_name_quick_placeholder" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="i_new_wallet_pwd" data-i18n="tr_password">...</label>
+                                                <input type="password" class="form-control form-b" id="i_new_wallet_pwd" data-i18n="[placeholder]password_placeholder" required placeholder="Password" oninput="verify_same_password(i_new_wallet_pwd,i_new_wallet_cpwd);">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="i_new_wallet_cpwd" data-i18n="cpassword">...</label>
+                                                <input type="password" class="form-control form-b" data-i18n="[placeholder]cpassword_placeholder" placeholder="Confirm Password" required id="i_new_wallet_cpwd" oninput="verify_same_password(i_new_wallet_pwd,i_new_wallet_cpwd);">
+                                            </div>
+                                            <br>
+                                            <button class="btn btn-b-2 w-b btn-block btn-radius" data-i18n="create_new" onClick="Create_New_Wallet();"></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row wallet-online">
+                <div class="col">
+                  
+                  <!--
+                  <div class="">
+                      <div class="justify-content-center d-flex flex-column col-12">
+                          <ul class="dash">
+                              <li>
+                                  <button href="#" class="btn btn-sm btn-set float-right" onclick="
+                            var x = function() { $('#ModalSettings').modal('show');};verify_password_action( x);"><span>&#x2699;&nbsp;</span><span data-i18n="control_wallet_settings"> Settings</span>
+                         </button>
+                              </li>
+                              <li>
+                                  <br>
+                                  <br>
+                              </li>
+                              <li class="text-white"><span data-i18n="balance_total"> Total </span> :</li>
+                              <li class="text-white">
+                                  <strong><span class="total_balance"></span></strong>
+                              </li>
+                              <li class="text-s-gray"><span data-i18n="balance_locked">Locked</span> :</li>
+                              <li class="text-muted"><span class="locked_balance"></span></li>
+                              <li class="text-s-gray"><span data-i18n="balance_unlocked">Unlocked</span> :</li>
+                              <li class="text-muted"><span class="unlocked_balance"></span></li>
+                              <li class="text-s-gray"><span data-i18n="daemon_address">Daemon Address</span> :</li>
+                              <li class="text-muted"><span class="wallet_daemon_address"></span></li>
+                              <li class="text-s-gray"><span data-i18n="blockchain_height">Blockchain Height</span> :</li>
+                              <li class="text-muted">
+
+                              </li>
+                          </ul>
+                      </div>
+                  </div>
+                -->
+                  
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="row online justify-content-center">
+                                <div class="col-md-8 col-lg-4">
+                                    
+                                </div>
+                            </div>
+                            <div class="tab-content">
+                                <!-- Send Tabs-->
+                                <div id="send" class="tab-pane fade in active show">
+                                  
+                                    <h2 class="text-white text-center">
+                                        <div data-i18n="tab_send_sendto_label">
+                                            Send to DERO Address.
+                                        </div>
+                                    </h2>
+                                    <div class="row">
+                                        <div class="col-md-2 col-lg-3"></div>
+                                        <div class="col text-center">
+                                            <div class="text-gray">
+                                                Please note that sending to another address is irreversible.
+                                            </div>
+                                            <span class="text-success">
+                                              <span data-i18n="balance_unlocked">...</span> -
+                                              <span class="unlocked_balance"></span> DERO
+                                            </span>
+                                            <br/>
+                                            <span class="text-warning">
+                                              <span data-i18n="balance_locked">...</span> -
+                                              <span class="locked_balance"></span> DERO
+                                            </span>
+                                            <br><br>
+                                        </div>
+                                        <div class="col-md-2 col-lg-3"></div>
+                                    </div>
+                                    
+
+                                    
+                                    <div class="row justify-content-center">
+                                        <div class="col">
+                                            <div class="form-group">
+                                                <label for="address" data-i18n="tab_send_sendto_label">...</label>
+                                                
+                                                <div class="action-items">
+                                                  <span class="action-icons qr qrCordovaScaner" id="go"></span>
+                                                </div>
+                                              
+                                                <input id="send_to_address" type="text" class="form-control form-b" oninput="growtextarea('send_to_address');validate_dero_address();" onchange="growtextarea('send_to_address');validate_dero_address();" required data-i18n="[placeholder]tab_send_sendto_address_placeholder">
+
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="amout" data-i18n="tab_send_amount_label">Amount of DERO to send:</label>
+                                                <input type="number" class="form-control form-b" oninput="validate_dero_amount();" id="send_to_amount" required data-i18n="[placeholder]tab_send_amount_placeholder">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="payid" data-i18n="tab_send_paymentid_label">Payment ID (optional):</label>
+                                                <input type="text" class="form-control form-b" oninput="validate_dero_paymentid();" id="send_to_paymentid" data-i18n="[placeholder]tab_send_paymentid_placeholder">
+                                            </div>
+                                            <br>
+                                            <button class="btn btn-b-2 w-b btn-block btn-radius" data-i18n="tab_send_send_transaction" onClick="wallet_send_transaction();">
+                                   SEND TRANSACTION
+                                   </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--Receive tabs-->
+                                <div id="receive" class="tab-pane fade">
+                                    <h2 class="text-white text-center">
+                                        <div data-i18n="tab_receive_wallet_address">
+                                            Wallet Address
+                                        </div>
+                                    </h2>
+                                    <div class="row justify-content-center">
+                                        <div class="col">
+                                            <div class="form-group">
+                                              <!--
+                                                <label data-i18n="tab_receive_wallet_address">Wallet Address</label>
+                                                <span class="badge badge-light clipboard pl-1" data-clipboard-action="copy" data-clipboard-target="#wallet_address_id">                                                
+                                                  copy
+                                              </span>
+                                                <span class="badge badge-info ml-2" onClick="$('#ModalQRCode').modal('show'); qrcode.clear(); qrcode_title.value=wallet_address;
+                                              qrcode.makeCode(wallet_address);qrcode_title.innerHTML=wallet_address;">
+                                                  qr
+                                              </span>-->
+                                              
+                                              <div class="action-items">
+                                                <span class="action-icons cp clipboard" data-clipboard-action="copy" data-clipboard-target="#wallet_address_id"></span>
+                                                <span class="action-icons qr" onClick="$('#ModalQRCode').modal('show'); qrcode.clear(); qrcode_title.value=wallet_address; qrcode.makeCode(wallet_address); qrcode_title.innerHTML=wallet_address;"></span>
+                                              </div>
+                                              
+                                                <input id="wallet_address_id" type="text" class="form-control form-b wallet_address" readonly>
+                                            </div>
+                                            <div class="form-group">
+                                                <label data-i18n="tab_receive_i32_address">Integrated 32 Address</label>
+                                                
+                                                <!--
+                                                <span class="badge badge-light clipboard" data-clipboard-action="copy" data-clipboard-target="#random_i32_address_id">                                                
+                                                  copy
+                                              </span>
+                                                <span class="badge badge-info ml-2" onClick="$('#ModalQRCode').modal('show'); qrcode.clear();  qrcode.makeCode(random_i32_address);qrcode_title.innerHTML=random_i32_address;">
+                                                  qr
+                                              </span>-->
+                                              
+                                              <div class="action-items">
+                                                <span class="action-icons cp clipboard" data-clipboard-action="copy" data-clipboard-target="#random_i32_address_id"></span>
+                                                <span class="action-icons qr" onClick="$('#ModalQRCode').modal('show'); qrcode.clear(); qqrcode_title.value=random_i32_address; rcode.makeCode(random_i32_address); qrcode_title.innerHTML=random_i32_address;"></span>
+                                              </div>
+                                              
+                                                <input id="random_i32_address_id" type="text" class="form-control form-b random_i32_address" readonly>
+                                            </div>
+                                            <div class="form-group">
+                                                <label data-i18n="tab_receive_i32_paymentid">Integrated 32 Address  Payment ID</label>
+                                                <input type="text" class="form-control form-b random_i32_address_paymentid" readonly>
+                                            </div>
+                                            <!-- Currently  these are not displayed
+                                      <h5> <span data-i18n="tab_receive_i8_address" >Integrated 8 Address  </span> :</h5>
+                                      
+                                      <div class="mb-2 bg-secondary text-white">
+                                      <div class="d-inline random_i8_address"></div>
+                                      </div>
+                                      
+                                      
+                                      <h6> <span data-i18n="tab_receive_i8_paymentid" >  Integrated 8 Address  Payment ID</span>:</h6>
+                                      <div class="mb-2 bg-secondary text-white">
+                                      <div class="d-inline random_i8_address_paymentid"></div>
+                                      </div>
+                                      -->
+                                            <div class="form-group">
+                                                <button class="btn btn-b-2 btn-block btn-radius" data-i18n="tab_receive_generate" onClick="promiseWorker.postMessage({cmd:'generate_integrated_address',id:secretid});">Generate Integrated address</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- History tabs -->
+                                <div id="history" class="tab-pane fade">
+                                    <div class="d-flex mb-2 justify-content-center">
+                                        <div class="d-inline-flex justify-content-center  ">
+                                            <button type="button" class="btn btn-b-2 btn-radius" onClick='update_tx_history();' data-i18n="tab_history_load">...</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- hold transaction table -->
+                                    <div id="txtable" class="text-monospace"></div>
+                                </div>
+                                <!-- About tabs -->
+                                <div id="about" class="tab-pane fade">
+                                  
+                                    <h2 class="text-white text-center">
+                                        <div>
+                                            Wallet Status
+                                        </div>
+                                    </h2>
+                                    
+                                    <p class="text-gray">
+                                      <strong><span>Wallet Alias</span></strong><br/>
+                                      <span class="wallet_local_name"></span>
+                                    </p>
+                                    
+                                    <p class="text-gray">
+                                      <strong><span data-i18n="balance_total">...</span></strong><br/>
+                                      <span class="total_balance"></span>
+                                    </p>
+                                    
+                                    <p class="text-gray">
+                                      <strong><span data-i18n="balance_unlocked">...</span></strong><br/>
+                                      <span class="unlocked_balance"></span>
+                                    </p>
+                                    
+                                    <p class="text-gray">
+                                      <strong><span data-i18n="balance_locked">...</span></strong><br/>
+                                      <span class="locked_balance"></span>
+                                    </p>
+                                    
+
+                                    <p class="text-gray">
+                                      <strong><span>Wallet Height</span></strong><br/>
+                                      <span class="wallet_topo_height"></span>
+                                    </p>
+                                    
+                                    <p class="text-gray">
+                                      <strong><span data-i18n="blockchain_height">...</span></strong><br/>
+                                      <span class="daemon_topo_height"></span>
+                                    </p>
+
+
+                                    <p class="text-gray">
+                                      <strong><span data-i18n="daemon_address">...</span></strong><br/>
+                                      <span class="wallet_daemon_address"></span>
+                                    </p>
+                                    
+                                    <p class="text-gray">
+                                      <strong><span>Core Wallet Version</span></strong><br/>
+                                      <span class="wallet_version_string"></span>
+                                    </p>
+
+                                    <hr/>
+
+                                    <h2 class="text-white text-center">
+                                        <div data-i18n="tr_DERO">
+                                            DERO
+                                        </div>
+                                    </h2>
+                                    <div class="row justify-content-center">
+                                        <div class="col">
+                                            <p class="text-gray">DERO is decentralized DAG (Directed Acyclic Graph) based blockchain with enhanced reliability, privacy, security and usability. DERO is industry leading and the first blockchain to have bulletproofs, TLS encrypted network.</p>
+                                            <p class="text-gray">DERO blockchain has the following salient features:</p>
+                                            <ul class="text-gray">
+                                                <li><span><strong>Extremely fast:</strong> 12 seconds transfer time</span></li>
+                                                <li><span><strong>Fast Confirmation:</strong> 2 minutes</span></li>
+                                                <li><span><strong>Bulletproofs:</strong> Zero Knowledge Range Proofs (NIZK). No one knows who spent what.</span></li>
+                                                <li><span><strong>Ring Signatures:</strong>: No one know who spent when and where.</span></li>
+                                                <li><span><strong>SSl/TLS P2P encrypted network</strong></span></li>
+                                                <li><span><strong>CryptoNote: Fully encrypted blockchain</strong></span></li>
+                                                <li><span><strong>Fully Auditable Supply</strong></span></li>
+                                                <li><span><strong>DAG Based:</strong> No orphans, no soft forks</span></li>
+                                                <li><span><strong>DERO blockchain is written from scratch in Golang.</strong></span></li>
+                                                <li><span><strong>Developed and maintained by original developers.</strong></span></li>
+                                            </ul>
+                                            <span class="text-center text-gray" style="width: 100%">Please visit <a href="https://dero.io">https://dero.io</a> for more information.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+
+            <!-- Footer -->
+            <!--
+            <div class="row ml-0 align-items-end  justify-content-center col-12">
+                <div class="wrap text-center">
+                    <hr>
+                    <div class="text-secondary">DERO Web wallet is alpha software.</div>
+                    <div class="text-secondary"><span>Core Wallet Version: </span><span class="wallet_version_string"></span><span> &nbsp; UI Version: 0.0.0 </span></div>
+                    <div class="text-secondary">Copyright DERO project </div>
+                    <div class="text-secondary">This project is covered by DERO license.</div>
+                    <div class="text-primary"> <a href="https://dero.io">https://dero.io</a></div>
+                </div>
+            </div>
+            -->
+        </div>
+    </div>
+    <!-- below are all the models used for various views -->
+    <!-- this model is used to confirm transaction -->
+    <div class="modal fade" id="ModalConfirmTX">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title text-center" data-i18n="tx_confirmation">Transfer Confirmation</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <!-- Modal body -->
+                <div class="modal-body">
+                    <div class="form-group text-dark">
+                        <label style="display:none;" id="transfer_txhex"> </label>
+                        <label class="font-weight-bold">TXID:</label> <label id="transfer_txid"></label> <br/>
+                        <label class="font-weight-bold"><span data-i18n="tx_input_amount">Input Amount</span>:</label> <label id="transfer_inputs_sum"></label>
+                        <label class="font-weight-bold"><span data-i18n="tx_sending_amount">Sending </span> :</label> <label id="transfer_amount"></label>
+                        <label class="font-weight-bold"><span data-i18n="tx_change">Change </span> :</label> <label id="transfer_change"></label>
+                        <label class="font-weight-bold"><span data-i18n="tx_fees">Fees</span>:</label> <label id="transfer_fee"></label> <br/>
+                        <label class="font-weight-bold"><span data-i18n="tx_size">TX Size </span> :</label> <label id="transfer_tx_size"></label><br/>
+                    </div>
+                </div>
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal" onclick="relay_tx();" data-i18n="tx_transfer">Transfer</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal" data-i18n="tr_close">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- The Modal to recover using seed words -->
+    <div class="modal fade" id="ModalRecoverSeedWords">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title text-center" data-i18n="recover_seed_title">Wallet Recovery using Seed Words</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <!-- Modal body -->
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="i_seed_wallet_name" data-i18n="wallet_name">Wallet Name</label>
+                        <input type="input" class="form-control form-b" id="i_seed_wallet_name" data-i18n="[placeholder]wallet_name_quick_placeholder" placeholder="Wallet Name for quick reference" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="i_seed" data-i18n="25_seed_words">25 Seed Words:</label>
+                        <textarea class="form-control form-b" oninput="growtextarea('i_seed');" style="overflow: hidden;box-sizing: border-box;" rows="3" id="i_seed" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="i_seed_pwd" data-i18n="tr_password">Password</label>
+                        <input type="password" class="form-control form-b" id="i_seed_pwd" data-i18n="[placeholder]password_placeholder" oninput="verify_same_password(i_seed_pwd,i_seed_cpwd);" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="i_seed_cpwd" data-i18n="cpassword">Confirm Password:</label>
+                        <input type="password" class="form-control form-b" id="i_seed_cpwd" oninput="verify_same_password(i_seed_pwd,i_seed_cpwd);" data-i18n="[placeholder]cpassword_placeholder" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="i_seed_topoheight" data-i18n="wallet_start_topoheight">Wallet start Topoheight: (optional)</label>
+                        <input type=number class="form-control form-b" id="i_seed_topoheight" value="0" type="number" min="-1" step="1" required>
+                    </div>
+                </div>
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button class="btn btn-b-2 w-b btn-block btn-radius" onclick="Recover_Wallet_Using_Seed_Words();" data-i18n="recover_wallet">Recover Wallet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- The Modal to recover using Recovery Key -->
+    <div class="modal fade" id="ModalRecoverKey">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title text-center" data-i18n="recover_key">Wallet Recovery using Recovery Key</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <!-- Modal body -->
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="i_key_wallet_name" data-i18n="wallet_name">Wallet Name</label>
+                        <input type="text" class="form-control form-b" id="i_key_wallet_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="i_key" data-i18n="recover_key">Recovery Key (64 hex chars)</label>
+                        <textarea class="form-control form-b" oninput="growtextarea('i_key');validate_recovery_key();" style="overflow: hidden;box-sizing: border-box;" rows="1" id="i_key" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="i_key_pwd" data-i18n="tr_password">Password:</label>
+                        <input type="password" class="form-control form-b" id="i_key_pwd" oninput="verify_same_password(i_key_pwd,i_key_cpwd);" required data-i18n="[placeholder]password_placeholder" placeholder="Password">
+                    </div>
+                    <div class="form-group">
+                        <label for="i_key_cpwd" data-i18n="cpassword">Confirm Password:</label>
+                        <input type="password" class="form-control form-b" id="i_key_cpwd" oninput="verify_same_password(i_key_pwd,i_key_cpwd);" data-i18n="[placeholder]cpassword_placeholder" placeholder="Confirm Password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="i_key_topoheight" data-i18n="wallet_start_topoheight">Wallet start height:</label>
+                        <input type=number class="form-control form-b" id="i_key_topoheight" value="-1" type="number" min="-1" step="1">
+                    </div>
+                </div>
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-b-2 w-b btn-block btn-radius" data-dismiss="modal" onclick="Recover_Wallet_Using_Recovery_Key();" data-i18n="recover_wallet">Recover Wallet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- The Modal to recover using View Key -->
+    <div class="modal fade" id="ModalRecoverViewKey">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title text-center" data-i18n="recover_viewkey_title">Wallet Recovery using View Key</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <!-- Modal body -->
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="i_viewkey_wallet_name" data-i18n="wallet_name">Wallet Name</label>
+                        <input type="text" class="form-control form-b" data-i18n="[placeholder]wallet_name_quick_placeholder" id="i_viewkey_wallet_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="i_viewkey" data-i18n="recover_viewkey">View Key (128 hex chars)</label>
+                        <textarea class="form-control form-b" oninput="growtextarea('i_viewkey');validate_viewkey_key();" style="overflow: hidden;box-sizing: border-box;" rows="1" id="i_viewkey" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="i_viewkey_pwd" data-i18n="tr_password">Password:</label>
+                        <input type="password" class="form-control form-b" data-i18n="[placeholder]password_placeholder" required placeholder="Password" id="i_viewkey_pwd" oninput="verify_same_password(i_viewkey_pwd,i_viewkey_cpwd);">
+                    </div>
+                    <div class="form-group">
+                        <label for="i_viewkey_cpwd" data-i18n="cpassword">Confirm Password:</label>
+                        <input type="password" class="form-control form-b" required data-i18n="[placeholder]cpassword_placeholder" placeholder="Confirm Password" id="i_viewkey_cpwd" oninput="verify_same_password(i_viewkey_pwd,i_viewkey_cpwd);">
+                    </div>
+                    <div class="form-group">
+                        <label for="i_viewkey_topoheight" data-i18n="wallet_start_topoheight">Wallet start height:</label>
+                        <input type=number class="form-control form-b" id="i_viewkey_topoheight" value="0" type="number" min="-1" step="1">
+                    </div>
+                </div>
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-b-2 w-b btn-block btn-radius" data-dismiss="modal" onclick="Recover_Wallet_Using_View_Key();" data-i18n="recover_wallet">Recover Wallet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- The Modal to create wallet tools such as change password,rescan blockchain etc -->
+    <div class="modal fade" id="ModalSettings">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title text-center" data-i18n="settings_title">Settings and Tools</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <!-- Modal body -->
+                <div class="modal-body">
+                    <div id="accordion">
+                        <div class="card">
+                            <div class="card-header">
+                                <a class="collapsed card-link" data-toggle="collapse" href="#collapsefreq">
+                           Wallet Syncs every <span class="wallet_sync_time"></span> seconds
+                           </a>
+                            </div>
+                            <div id="collapsefreq" class="collapse" data-parent="#accordion">
+                                <div class="card-body">
+                                    <form>
+                                        <div class="">
+                                            <label for="formControlRange">Sync Every <span class="wallet_sync_time"></span> seconds</label>
+                                            <input type="range" class="form-control-range" id="formControlRange" min="6" value="6" max="120" oninput="promiseWorker.postMessage({cmd:'set_sync_frequency',id:secretid,syncevery:parseInt(formControlRange.value,10)});">
+                                            <div class="d-flex bd-highlight justify-content-between">
+                                                <div class="p-2 "><span class="text-left text-gray">High Compute<br/>High Network </span></div>
+                                                <div class="p-2 "><span class="text-right text-gray">Less Compute<br/>Less Network </span></div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <!--
+                        <div class="card">
+                            <div class="card-header">
+                                <a class="card-link" data-toggle="collapse" data-i18n="download_wallet_file" href="#collapse0">
+                           Download Wallet as file
+                           </a>
+                            </div>
+                            <div id="collapse0" class="collapse" data-parent="#accordion">
+                                <div class="card-body">
+                                    <div class="">
+                                        <button type="button" class="btn btn-b-2 w-b btn-block btn-radius" onclick="promiseWorker.postMessage({cmd:'download_wallet',id:secretid}).then(function (response) {
+                                    if (response === false) {
+                                    alert('Wallet Download Failed');
+                                    }else{
+                                    var blob = new Blob( [new Uint8Array(response.edb)] , {type: 'application/octet-stream'});
+                                    saveAs(blob,   response.name + '.bin' );
+                                    }
+                                    });
+                                    " data-i18n="download_wallet">Download Wallet</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                      -->
+                        <div class="card">
+                            <div class="card-header">
+                                <a class="card-link" data-toggle="collapse" href="#collapse1">
+                                    <span data-i18n="rename_wallet">Rename Open Wallet</span> <strong class="wallet_local_name"></strong>
+                                </a>
+                            </div>
+                            <div id="collapse1" class="collapse" data-parent="#accordion">
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <input type="text" class="form-control form-b" id="i_settings_wallet_name" data-i18n="[placeholder]rename_wallet_placeholder" placeholder="New wallet name" required>
+                                    </div>
+                                    <button type="button" class="btn btn-b-2 w-b btn-block btn-radius" data-i18n="rename_wallet" onclick="rename_wallet();">Rename Wallet</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <a class="collapsed card-link" data-toggle="collapse" href="#collapse2" data-i18n="change_wallet_start_topoheight">
+                           Change Wallet Start TopoHeight
+                           </a>
+                            </div>
+                            <div id="collapse2" class="collapse" data-parent="#accordion">
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label data-i18n="change_wallet_start_topoheight_rare">Change Wallet Start TopoHeight (Rare use)  Current:<span class="wallet_initial_height"></span></label>
+                                        <input type="number" class="form-control form-b" id="i_settings_topoheight" value="0" min="0" step="1">
+                                    </div>
+                                    <button type="button" class="btn btn-b-2 w-b btn-block btn-radius" onclick="change_wallet_start_height(parseInt(i_settings_topoheight.value,10));" data-i18n="change_wallet_start_topoheight">Change Start Height</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <a class="collapsed card-link" data-toggle="collapse" href="#collapse3" data-i18n="change_wallet_password">
+                           Change Wallet Password
+                           </a>
+                            </div>
+                            <div id="collapse3" class="collapse" data-parent="#accordion">
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label for="i_settings_pwd" data-i18n="new_password">New Password:</label>
+                                        <input type="password" class="form-control form-b" id="i_settings_pwd" oninput="verify_same_password(i_settings_pwd,i_settings_cpwd);" data-i18n="[placeholder]new_password" required placeholder=" ">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="i_settings_cpwd" data-i18n="new_cpassword">Confirm New Password:</label>
+                                        <input type="password" class="form-control form-b" data-i18n="[placeholder]new_cpassword" id="i_settings_cpwd" oninput="verify_same_password(i_settings_pwd,i_settings_cpwd);" required placeholder=" ">
+                                    </div>
+                                    <button type="button" class="btn btn-b-2 w-b btn-block btn-radius" data-i18n="change_wallet_password" onclick="change_wallet_password();">Change Wallet Password</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <a class="collapsed card-link" data-toggle="collapse" href="#collapse4" data-i18n="rescan_blockchain">
+                           Rescan Blockchain from start topoheight
+                           </a>
+                            </div>
+                            <div id="collapse4" class="collapse" data-parent="#accordion">
+                                <div class="card-body">
+                                    <label data-i18n="wallet_minimum_topoheight">Wallet may be restored from Topo Height</label>:&nbsp;<label class="wallet_minimum_topo_height"> </label>
+                                    <label data-i18n="rescan_blockchain_rare">Never or Rarely required. Wallet gets busy for 20-30 minutes </label>
+                                    <button type="button" class="btn btn-b-2 w-b btn-block btn-radius" data-i18n="rescan_blockchain_trigger" onclick="promiseWorker.postMessage({cmd:'rescan_blockchain',id:secretid});alert(i18next.t('success'));;">Trigger Blockchain Rescanning <br/></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <a class="collapsed card-link" data-toggle="collapse" href="#collapse5" data-i18n="transfer_everything">
+                           Transfer Everything to Address(DERO balance)
+                           </a>
+                            </div>
+                            <div id="collapse5" class="collapse" data-parent="#accordion">
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label for="i_settings_send_address" data-i18n="dero_address">DERO address</label>
+                                        <input type="text" class="form-control form-b" id="i_settings_send_address" data-i18n="[placeholder]valid_dero_address_placeholder" required placeholder="Enter Valid DERO address">
+                                    </div>
+                                    <button type="button" class="btn btn-b-2 w-b btn-block btn-radius" onclick="wallet_send_everything_transaction();" data-i18n="send_now">Send Now</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <a class="collapsed card-link" data-toggle="collapse" href="#collapse6" data-i18n="control_wallet_seed">Get your seed</a>
+                            </div>
+                            <div id="collapse6" class="collapse" data-parent="#accordion">
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label class="text-danger" data-i18n="seed1">Your wallet can be recovered using the below seed.</label>
+                                        <label class="text-danger" data-i18n="seed2">You must save the SEED in a safe secure location.</label>
+                                        <label class="text-danger" data-i18n="seed3">Sharing your SEED is equal to sharing your wallet.If your SEED is lost, consider your wallet as lost.</label>
+                                        <div class="mt-2">
+                                            <label for="sel1" data-i18n="seed_language">Seed Language:</label>
+                                            <select class="form-control" id="sseedlanguage" onChange="update_seed(this.value);">
+                                          <option>English</option>
+                                          <option>日本語</option>
+                                          <option>简体中文 (中国)</option>
+                                          <option>Nederlands</option>
+                                          <option>Esperanto</option>
+                                          <option>русский язык</option>
+                                          <option>Español</option>
+                                          <option>Português</option>
+                                          <option>Français</option>
+                                          <option>Deutsch</option>
+                                          <option>Italiano</option>
+                                       </select>
+                                        </div>
+                                        <label class="label-seed mt-2" id="seedbox">SEED</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Modal footer 
+               <div class="modal-footer">
+                  <button type="button" class="btn btn-danger" data-dismiss="modal" data-i18n="tr_close">Close</button>
+               </div> -->
+            </div>
+        </div>
+    </div>
+    <!-- The Modal used to display seed seed words -->
+    <div class="modal fade" id="ModalSeedWords">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title text-center" data-i18n="seed_title">Your DERO wallet SEED</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <!-- Modal body -->
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="text-danger" data-i18n="seed1">Your wallet can be recovered using the below seed.</label>
+                        <label class="text-danger" data-i18n="seed2">You must save the SEED in a safe secure location.</label>
+                        <label class="text-danger" data-i18n="seed3">Sharing your SEED is equal to sharing your wallet.If your SEED is lost, consider your wallet as lost.</label>
+                        <div class="form-group mt-2">
+                            <label class="text-dark" for="sel1" data-i18n="seed_language">Seed Language:</label>
+                            <select class="form-control" id="sseedlanguage" onChange="update_seed(this.value);">
+                           <option>English</option>
+                           <option>日本語</option>
+                           <option>简体中文 (中国)</option>
+                           <option>Nederlands</option>
+                           <option>Esperanto</option>
+                           <option>русский язык</option>
+                           <option>Español</option>
+                           <option>Português</option>
+                           <option>Français</option>
+                           <option>Deutsch</option>
+                           <option>Italiano</option>
+                        </select>
+                        </div>
+                        <label class="label-seed mt-2" id="seedbox">...</label>
+                    </div>
+                </div>
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- The Modal used to display seed seed words -->
+    <div class="modal fade" id="ModalQRCode">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title text-center" data-i18n="wallet_address">...</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <!-- Modal body -->
+                <div class="modal-body ">
+                    <div class="d-flex justify-content-center">
+                        <div id="qrcode"></div>
+                    </div>
+                </div>
+                <!-- Modal footer -->
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="ModalPromptPassword">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title text-center" data-i18n="enter_password">...</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <!-- Modal body -->
+                <div class="modal-body ">
+                    <div class="form-group">
+                        <input type="password" name="password" class="form-control form-b" required>
+                        <input type="hidden" name="action">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" id="PromptPassword" class="btn btn-b-2 w-b btn-block btn-radius">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ui-lock">
+      <div class="load-frame">
+        <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+      </div>
+    </div>
+    <div class="ui-lock-alert">
+      <div class="message">
+        <span></span>
+        <br/>
+        <button type="button" id="closeAlert" class="mt-3 btn btn-block btn-radius">OK</button>
+      </div>
+    </div>
+</body>
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<!--<script type="text/javascript" src="./jquery-3.2.1.slim.min.js" ></script>-->
+<script type="text/javascript" src="./deps/jquery-3.2.1.js"></script>
+<script type="text/javascript" src="./deps/js.cookie-2.2.0.min.js"></script>
+<script type="text/javascript" src="./deps/popper.min.js"></script>
+<script type="text/javascript" src="./deps/bootstrap.min.js"></script>
+<script type="text/javascript" src="./deps/i18next_11.9.1.min.js"></script>
+<script type="text/javascript" src="./deps/jquery-i18next.min.js"></script>
+<script type="text/javascript" src="./translations.js"></script>
+<script type="text/javascript" src="./deps/clipboard.min.js"></script>
+<script type="text/javascript" src='./deps/big.js'></script>
+<script type="text/javascript" src="./deps/FileSaver.js"></script>
+<script type="text/javascript" src="./deps/tabulator.min.js"></script>
+<script type="text/javascript" src="./deps/promise-worker.js"></script>
+<script type="text/javascript" src="./deps/qrcode.js"></script>
+<!-- these are for qr code reader from camera -->
+<script async src="./deps/zxing.js"></script>
+<!--<script type="text/javascript" src="./wallet.js"></script>-->
+<script type="text/javascript" src="./index.js"></script>
+
+</html>
